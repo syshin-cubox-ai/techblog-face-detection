@@ -24,8 +24,10 @@ class SCRFD:
         self.iou_thres = iou_thres
 
         self.session = onnxruntime.InferenceSession(model_file, providers=['CPUExecutionProvider'])
-        self.img_size = self.session.get_inputs()[0].shape[2]
-        self.input_name = self.session.get_inputs()[0].name
+        session_input = self.session.get_inputs()[0]
+        assert session_input.shape[2] == session_input.shape[3], 'The input shape must be square.'
+        self.img_size = session_input.shape[2]
+        self.input_name = session_input.name
 
     def _transform_image(self, img: np.ndarray) -> Tuple[np.ndarray, float]:
         """
@@ -55,23 +57,22 @@ class SCRFD:
 
             keep = []
             while order.size > 0:
-                i = order[0]
-                keep.append(i)
-                xx1 = np.maximum(x1[i], x1[order[1:]])
-                yy1 = np.maximum(y1[i], y1[order[1:]])
-                xx2 = np.minimum(x2[i], x2[order[1:]])
-                yy2 = np.minimum(y2[i], y2[order[1:]])
+                keep.append(order[0])
+                xx1 = np.maximum(x1[order[0]], x1[order[1:]])
+                yy1 = np.maximum(y1[order[0]], y1[order[1:]])
+                xx2 = np.minimum(x2[order[0]], x2[order[1:]])
+                yy2 = np.minimum(y2[order[0]], y2[order[1:]])
+                w = np.maximum(0.0, xx2 - xx1)
+                h = np.maximum(0.0, yy2 - yy1)
 
-                w = np.maximum(0.0, xx2 - xx1 + 1)
-                h = np.maximum(0.0, yy2 - yy1 + 1)
                 intersection = w * h
-                iou = intersection / (areas[i] + areas[order[1:]] - intersection)
+                union = areas[order[0]] + areas[order[1:]] - intersection
+                iou = intersection / union
 
-                # i번째 항목(박스)을 기준으로, iou 임계값 이하인 iou를 가지는 항목만 남김
+                # order[0] 항목(박스)을 기준으로, iou 임계값 이하인 iou를 가지는 항목만 남김
                 idx = np.where(iou <= self.iou_thres)[0]
                 order = order[idx + 1]
             pred = pred[keep, :]
-
         return pred
 
     def detect_one(self, img: np.ndarray) -> Union[np.ndarray, None]:
@@ -105,9 +106,9 @@ class SCRFD:
         bbox = pred[:, :4].round().astype(np.int32).tolist()
         conf = pred[:, 4].tolist()
         if pred.shape[1] == 5:
-            kps = None
+            landmarks = None
         elif pred.shape[1] == 15:
-            kps = pred[:, 5:].round().astype(np.int32).tolist()
+            landmarks = pred[:, 5:].round().astype(np.int32).tolist()
         else:
             raise ValueError(f'Wrong prediction shape: {pred.shape}')
-        return bbox, conf, kps
+        return bbox, conf, landmarks
