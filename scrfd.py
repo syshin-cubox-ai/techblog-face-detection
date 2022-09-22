@@ -42,34 +42,37 @@ class SCRFD:
         return img, scale
 
     def _non_max_suppression(self, pred: np.ndarray) -> np.ndarray:
-        # Remove items below the confidence threshold.
+        # 임계값 이상으로 confidence를 가진 항목만 남김
         keep = np.where(pred[:, 4] >= self.conf_thres)[0]
         pred = pred[keep]
 
         if pred.shape[0] > 0:
+            # 속도 개선을 위해, 추후 IoU 계산에 사용할 각 bbox의 넓이를 한 번에 계산해둠
             x1 = pred[:, 0]
             y1 = pred[:, 1]
             x2 = pred[:, 2]
             y2 = pred[:, 3]
             scores = pred[:, 4]
             areas = (x2 - x1) * (y2 - y1)
-            order = scores.argsort()[::-1]
 
+            order = scores.argsort()[::-1]
             keep = []
             while order.size > 0:
+                # confidence가 가장 높은 항목(order[0])을 선택하고, 최종 출력 리스트에 추가
                 keep.append(order[0])
-                xx1 = np.maximum(x1[order[0]], x1[order[1:]])
-                yy1 = np.maximum(y1[order[0]], y1[order[1:]])
-                xx2 = np.minimum(x2[order[0]], x2[order[1:]])
-                yy2 = np.minimum(y2[order[0]], y2[order[1:]])
-                w = np.maximum(0.0, xx2 - xx1)
-                h = np.maximum(0.0, yy2 - yy1)
 
+                # order[0]을 기준으로 나머지 모든 항목에 대해 IoU를 구함
+                inter_x1 = np.maximum(x1[order[0]], x1[order[1:]])
+                inter_y1 = np.maximum(y1[order[0]], y1[order[1:]])
+                inter_x2 = np.minimum(x2[order[0]], x2[order[1:]])
+                inter_y2 = np.minimum(y2[order[0]], y2[order[1:]])
+                w = np.maximum(0.0, inter_x2 - inter_x1)
+                h = np.maximum(0.0, inter_y2 - inter_y1)
                 intersection = w * h
                 union = areas[order[0]] + areas[order[1:]] - intersection
                 iou = intersection / union
 
-                # order[0] 항목(박스)을 기준으로, iou 임계값 이하인 iou를 가지는 항목만 남김
+                # 임계값 이하로 iou를 가진 항목만 남김
                 idx = np.where(iou <= self.iou_thres)[0]
                 order = order[idx + 1]
             pred = pred[keep, :]
