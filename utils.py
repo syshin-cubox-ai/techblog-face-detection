@@ -21,7 +21,7 @@ def clip_coords(boxes: np.ndarray, shape: tuple) -> np.ndarray:
     return boxes
 
 
-def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = None, thickness=2):
+def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = None, thickness=2, hide_conf=False):
     # Draw prediction on the image. If the landmarks is None, only draw the bbox.
     assert img.ndim == 3, f'img dimension is invalid: {img.ndim}'
     assert img.dtype == np.uint8, f'img dtype must be uint8, got {img.dtype}'
@@ -40,7 +40,8 @@ def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = N
         cv2.rectangle(img, (x1, y1), (x2, y2), bbox_color, thickness, cv2.LINE_AA)
 
         # Text confidence
-        cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), 0, thickness / 3, conf_color, thickness, cv2.LINE_AA)
+        if not hide_conf:
+            cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), 0, thickness / 3, conf_color, thickness, cv2.LINE_AA)
 
         # Draw landmarks
         if landmarks_one is not None:

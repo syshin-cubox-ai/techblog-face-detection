@@ -1,5 +1,6 @@
 import argparse
 import os
+import pathlib
 import time
 
 import cv2
@@ -7,13 +8,18 @@ import cv2
 import scrfd
 import utils
 
+# Global parameters
+IMG_FORMATS = 'bmp', 'dng', 'jpeg', 'jpg', 'mpo', 'png', 'tif', 'tiff', 'webp', 'pfm'  # include image suffixes
+VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 'ts', 'wmv'  # include video suffixes
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-file', type=str, default='onnx/scrfd_2.5g_bnkps.onnx', help='model file path.')
-    parser.add_argument('--source', default='img/1.jpg', help='image path, video path or webcam index')
+    parser.add_argument('--source', type=str, default='img/1.jpg', help='image path, video path or webcam index')
     parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.5, help='iou threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
     parser.add_argument('--line-thickness', type=int, default=2, help='drawing thickness (pixels)')
+    parser.add_argument('--hide-conf', action='store_true', help='hide confidences')
     args = parser.parse_args()
     print(args)
 
@@ -21,11 +27,14 @@ if __name__ == '__main__':
     detector = scrfd.SCRFD(args.model_file, args.conf_thres, args.iou_thres)
 
     # Inference
-    if isinstance(args.source, int) or os.path.splitext(args.source)[1] == '.mp4':  # source: webcam or video
-        cap = cv2.VideoCapture(args.source)
+    if args.source.isnumeric() or pathlib.Path(args.source).suffix[1:] in VID_FORMATS:  # source: webcam or video
+        if args.source.isnumeric():
+            cap = cv2.VideoCapture(int(args.source))
+        else:
+            cap = cv2.VideoCapture(args.source)
         assert cap.isOpened()
 
-        if isinstance(args.source, int):
+        if args.source.isnumeric():
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
@@ -49,7 +58,7 @@ if __name__ == '__main__':
             # Draw prediction
             if pred is not None:
                 bbox, conf, landmarks = detector.parse_prediction(pred)
-                utils.draw_prediction(frame, bbox, conf, landmarks, args.line_thickness)
+                utils.draw_prediction(frame, bbox, conf, landmarks, args.line_thickness, args.hide_conf)
 
             # Show prediction
             cv2.imshow('Face detection', frame)
@@ -58,7 +67,7 @@ if __name__ == '__main__':
         cap.release()
         cv2.destroyAllWindows()
 
-    elif isinstance(args.source, str):  # source: image
+    elif pathlib.Path(args.source).suffix[1:] in IMG_FORMATS:  # source: image
         assert os.path.exists(args.source), f'Image not found: {args.source}'
 
         # Load image
@@ -71,11 +80,11 @@ if __name__ == '__main__':
         # Draw prediction
         if pred is not None:
             bbox, conf, landmarks = detector.parse_prediction(pred)
-            utils.draw_prediction(img, bbox, conf, landmarks, args.line_thickness)
+            utils.draw_prediction(img, bbox, conf, landmarks, args.line_thickness, args.hide_conf)
         else:
             print('No faces detected.')
 
         # Save image
         cv2.imwrite('result.jpg', img)
     else:
-        raise ValueError('Wrong source.')
+        raise ValueError(f'Wrong source: {args.source}')
