@@ -47,3 +47,32 @@ def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = N
         if landmarks_one is not None:
             for point_x, point_y, color in zip(landmarks_one[::2], landmarks_one[1::2], landmarks_colors):
                 cv2.circle(img, (point_x, point_y), thickness + 1, color, cv2.FILLED)
+
+
+def align_face(img: np.ndarray, landmarks: list, output_size=112) -> np.ndarray:
+    landmarks = landmarks[0]
+    landmarks = np.array([landmarks[0:2],  # left eye
+                          landmarks[2:4],  # right eye
+                          landmarks[4:6],  # nose
+                          landmarks[6:8],  # left mouth
+                          landmarks[8:10]])  # right mouse
+
+    # it is based on (112, 112) size img.
+    dst = np.array([[38.2946, 51.6963],
+                    [73.5318, 51.5014],
+                    [56.0252, 71.7366],
+                    [41.5493, 92.3655],
+                    [70.7299, 92.2041]], np.float32)
+
+    # scikit-image
+    import skimage.transform
+    tform = skimage.transform.SimilarityTransform()
+    assert tform.estimate(landmarks, dst)
+    M = tform.params[:2]
+    warped_img = cv2.warpAffine(img, M, (output_size, output_size))
+
+    # OpenCV
+    # M, inliers = cv2.estimateAffinePartial2D(landmarks, dst, ransacReprojThreshold=np.inf)
+    # assert np.count_nonzero(inliers) == inliers.size
+    # warped_img = cv2.warpAffine(img, M, (output_size, output_size))
+    return warped_img
