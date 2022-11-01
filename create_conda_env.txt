@@ -1,0 +1,4 @@
+conda create -n fd python=3.9 -y
+conda activate fd
+pip install opencv-python==4.5.5.64
+pip install onnxruntime
