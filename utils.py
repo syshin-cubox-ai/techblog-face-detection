@@ -1,8 +1,10 @@
+from typing import Tuple
+
 import cv2
 import numpy as np
 
 
-def resize_preserving_aspect_ratio(img: np.ndarray, img_size: int, scale_ratio=1.0) -> tuple[np.ndarray, float]:
+def resize_preserving_aspect_ratio(img: np.ndarray, img_size: int, scale_ratio=1.0) -> Tuple[np.ndarray, float]:
     # Resize preserving aspect ratio. scale_ratio is the scaling ratio of the img_size.
     h, w = img.shape[:2]
     scale = img_size // scale_ratio / max(h, w)
