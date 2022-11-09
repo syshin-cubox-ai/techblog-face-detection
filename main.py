@@ -1,6 +1,5 @@
 import argparse
 import os
-import pathlib
 import time
 
 import cv2
@@ -20,6 +19,7 @@ if __name__ == '__main__':
     parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
     parser.add_argument('--line-thickness', type=int, default=2, help='drawing thickness (pixels)')
     parser.add_argument('--hide-conf', action='store_true', help='hide confidences')
+    parser.add_argument('--draw-fps', action='store_true', help='Draw fps on the frame.')
     args = parser.parse_args()
     print(args)
 
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     detector = scrfd.SCRFD(args.model_file, args.conf_thres, args.iou_thres)
 
     # Inference
-    if args.source.isnumeric() or pathlib.Path(args.source).suffix[1:] in VID_FORMATS:  # source: webcam or video
+    if args.source.isnumeric() or os.path.splitext(args.source)[1][1:] in VID_FORMATS:  # source: webcam or video
         if args.source.isnumeric():
             cap = cv2.VideoCapture(int(args.source))
         else:
@@ -37,9 +37,11 @@ if __name__ == '__main__':
         if args.source.isnumeric():
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 2)
 
         count = 1
         accumulated_time = 0
+        fps = 0
         while cv2.waitKey(5) != ord('q'):
             # Load frame
             ret, frame = cap.read()
@@ -51,9 +53,17 @@ if __name__ == '__main__':
             pred = detector.detect_one(frame)
             accumulated_time += (time.time() - start)
             if count % 10 == 0:
-                print(f'FPS: {1 / (accumulated_time / 10):.2f}')
+                fps = 1 / (accumulated_time / 10)
+                print(f'{fps:.2f} FPS')
                 accumulated_time = 0
             count += 1
+
+            # Draw FPS
+            if args.draw_fps:
+                cv2.putText(frame, f'{fps:.2f} FPS', (10, 24), cv2.FONT_HERSHEY_DUPLEX,
+                            0.6, (0, 0, 0), 2, cv2.LINE_AA)
+                cv2.putText(frame, f'{fps:.2f} FPS', (10, 24), cv2.FONT_HERSHEY_DUPLEX,
+                            0.6, (255, 255, 255), 1, cv2.LINE_AA)
 
             # Draw prediction
             if pred is not None:
@@ -61,13 +71,13 @@ if __name__ == '__main__':
                 utils.draw_prediction(frame, bbox, conf, landmarks, args.line_thickness, args.hide_conf)
 
             # Show prediction
-            cv2.imshow('Face detection', frame)
+            cv2.imshow('Face Detection', frame)
 
         print('Quit inference.')
         cap.release()
         cv2.destroyAllWindows()
 
-    elif pathlib.Path(args.source).suffix[1:] in IMG_FORMATS:  # source: image
+    elif os.path.splitext(args.source)[1][1:] in IMG_FORMATS:  # source: image
         assert os.path.exists(args.source), f'Image not found: {args.source}'
 
         # Load image
@@ -86,5 +96,6 @@ if __name__ == '__main__':
 
         # Save image
         cv2.imwrite('result.jpg', img)
+        print(f'Save result to "result.jpg"')
     else:
         raise ValueError(f'Wrong source: {args.source}')
