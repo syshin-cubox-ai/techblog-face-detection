@@ -43,7 +43,7 @@ def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = N
 
         # Text confidence
         if not hide_conf:
-            cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), 0, thickness / 3, conf_color, thickness, cv2.LINE_AA)
+            cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), None, thickness / 3, conf_color, thickness, cv2.LINE_AA)
 
         # Draw landmarks
         if landmarks_one is not None:
@@ -51,13 +51,14 @@ def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = N
                 cv2.circle(img, (point_x, point_y), thickness + 1, color, cv2.FILLED)
 
 
-def align_face(img: np.ndarray, landmarks: list, output_size=112) -> np.ndarray:
-    landmarks = landmarks[0]
+def align_face(img: np.ndarray, landmarks: list) -> np.ndarray:
+    landmarks = landmarks[0]  # Only use the first face
     landmarks = np.array([landmarks[0:2],  # left eye
                           landmarks[2:4],  # right eye
                           landmarks[4:6],  # nose
                           landmarks[6:8],  # left mouth
                           landmarks[8:10]])  # right mouse
+    # equivalent to landmarks = np.reshape(landmarks, (-1, 2))
 
     # it is based on (112, 112) size img.
     dst = np.array([[38.2946, 51.6963],
@@ -67,14 +68,14 @@ def align_face(img: np.ndarray, landmarks: list, output_size=112) -> np.ndarray:
                     [70.7299, 92.2041]], np.float32)
 
     # scikit-image
-    import skimage.transform
-    tform = skimage.transform.SimilarityTransform()
-    assert tform.estimate(landmarks, dst)
-    M = tform.params[:2]
-    warped_img = cv2.warpAffine(img, M, (output_size, output_size))
+    # import skimage.transform
+    # tform = skimage.transform.SimilarityTransform()
+    # assert tform.estimate(landmarks, dst)
+    # M = tform.params[:2]
+    # warped_img = cv2.warpAffine(img, M, (112, 112))
 
     # OpenCV
-    # M, inliers = cv2.estimateAffinePartial2D(landmarks, dst, ransacReprojThreshold=np.inf)
-    # assert np.count_nonzero(inliers) == inliers.size
-    # warped_img = cv2.warpAffine(img, M, (output_size, output_size))
+    M, inliers = cv2.estimateAffinePartial2D(landmarks, dst, ransacReprojThreshold=np.inf)
+    assert np.count_nonzero(inliers) == inliers.size
+    warped_img = cv2.warpAffine(img, M, (112, 112))
     return warped_img
