@@ -49,9 +49,9 @@ if __name__ == '__main__':
                 break
 
             # Detect face
-            start = time.time()
+            start = time.perf_counter()
             pred = detector.detect_one(frame)
-            accumulated_time += (time.time() - start)
+            accumulated_time += (time.perf_counter() - start)
             if count % 10 == 0:
                 fps = 1 / (accumulated_time / 10)
                 print(f'{fps:.2f} FPS')
