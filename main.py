@@ -13,7 +13,7 @@ VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 't
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-file', type=str, default='onnx/scrfd_2.5g_bnkps.onnx', help='model file path.')
+    parser.add_argument('--model-file', type=str, default='onnx_files/scrfd_2.5g_bnkps.onnx', help='model file path.')
     parser.add_argument('--source', type=str, default='img/1.jpg', help='image path, video path or webcam index')
     parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
