@@ -43,12 +43,12 @@ def draw_prediction(img: np.ndarray, bbox: list, conf: list, landmarks: list = N
 
         # Text confidence
         if not hide_conf:
-            cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), None, thickness / 3, conf_color, thickness, cv2.LINE_AA)
+            cv2.putText(img, f'{conf_one:.2f}', (x1, y1 - 2), None, 0.6, conf_color, thickness, cv2.LINE_AA)
 
         # Draw landmarks
         if landmarks_one is not None:
             for point_x, point_y, color in zip(landmarks_one[::2], landmarks_one[1::2], landmarks_colors):
-                cv2.circle(img, (point_x, point_y), thickness + 1, color, cv2.FILLED)
+                cv2.circle(img, (point_x, point_y), 2, color, cv2.FILLED)
 
 
 def align_face(img: np.ndarray, landmarks: list) -> np.ndarray:
