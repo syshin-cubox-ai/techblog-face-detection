@@ -16,8 +16,10 @@ def resize_preserving_aspect_ratio(img: np.ndarray, img_size: int, scale_ratio=1
 
 def clip_coords(boxes: np.ndarray, shape: tuple) -> np.ndarray:
     # Clip bounding xyxy bounding boxes to image shape (height, width)
-    boxes[:, [0, 2]] = boxes[:, [0, 2]].clip(0, shape[1])  # x1, x2
-    boxes[:, [1, 3]] = boxes[:, [1, 3]].clip(0, shape[0])  # y1, y2
+    boxes[:, 0] = boxes[:, 0].clip(0, shape[1])  # x1
+    boxes[:, 1] = boxes[:, 1].clip(0, shape[0])  # y1
+    boxes[:, 2] = boxes[:, 2].clip(0, shape[1])  # x2
+    boxes[:, 3] = boxes[:, 3].clip(0, shape[0])  # y2
     boxes[:, 5:15:2] = boxes[:, 5:15:2].clip(0, shape[1])  # x axis
     boxes[:, 6:15:2] = boxes[:, 6:15:2].clip(0, shape[0])  # y axis
     return boxes
@@ -67,14 +69,6 @@ def align_face(img: np.ndarray, landmarks: list) -> np.ndarray:
                     [41.5493, 92.3655],
                     [70.7299, 92.2041]], np.float32)
 
-    # scikit-image
-    # import skimage.transform
-    # tform = skimage.transform.SimilarityTransform()
-    # assert tform.estimate(landmarks, dst)
-    # M = tform.params[:2]
-    # warped_img = cv2.warpAffine(img, M, (112, 112))
-
-    # OpenCV
     M, inliers = cv2.estimateAffinePartial2D(landmarks, dst, ransacReprojThreshold=np.inf)
     assert np.count_nonzero(inliers) == inliers.size
     warped_img = cv2.warpAffine(img, M, (112, 112))
