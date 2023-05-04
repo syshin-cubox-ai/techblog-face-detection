@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Union
+from typing import List, Tuple, Optional
 
 import cv2
 import numpy as np
@@ -55,8 +55,8 @@ class SCRFD:
         return img, scale
 
     def _non_max_suppression(self, pred: np.ndarray) -> np.ndarray:
-        # 임계값 이상으로 confidence를 가진 항목만 남김
-        keep = np.where(pred[:, 4] >= self.conf_thres)[0]
+        # 임계값 초과로 confidence를 가진 항목만 남김
+        keep = np.where(pred[:, 4] > self.conf_thres)[0]
         pred = pred[keep]
         if pred.size == 0:
             return pred
@@ -88,13 +88,13 @@ class SCRFD:
             union = area[highest_conf_item] + area[rest_item] - intersection
             iou = intersection / union
 
-            # 임계값 이하로 iou를 가진 항목만 남김
-            item = np.where(iou <= self.iou_thres)[0]
+            # 임계값 미만으로 iou를 가진 항목만 남김
+            item = np.where(iou < self.iou_thres)[0]
             order = order[item + 1]
         pred = pred[keep, :]
         return pred
 
-    def detect_one(self, img: np.ndarray) -> Union[np.ndarray, None]:
+    def detect_one(self, img: np.ndarray) -> Optional[np.ndarray]:
         """
         Perform face detection on a single image.
         Args:
