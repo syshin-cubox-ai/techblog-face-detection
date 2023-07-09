@@ -51,6 +51,8 @@ if __name__ == '__main__':
         while cv2.waitKey(5) != ord('q'):
             # Load image
             ret, img = cap.read()
+            if not ret:
+                break
 
             # Detect face
             start = time.perf_counter()
