@@ -51,7 +51,6 @@ if __name__ == '__main__':
         while cv2.waitKey(5) != ord('q'):
             # Load image
             ret, img = cap.read()
-            assert ret, 'no frame has been grabbed.'
 
             # Detect face
             start = time.perf_counter()
