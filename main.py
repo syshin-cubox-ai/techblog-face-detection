@@ -15,7 +15,7 @@ VID_FORMATS = 'asf', 'avi', 'gif', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg', 't
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, help='model file path.')
+    parser.add_argument('--model-path', type=str, required=True, help='model file path.')
     parser.add_argument('--source', type=str, default='0', help='file/dir/webcam')
     parser.add_argument('--conf-thres', type=float, default=0.3, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='NMS IoU threshold')
